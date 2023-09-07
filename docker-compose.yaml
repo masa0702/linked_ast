@@ -1,0 +1,7 @@
+version: '3'
+services:
+  myapp:
+    build: .
+    volumes:
+      - ./your_project_directory:/app
+    command: python your_script.py
