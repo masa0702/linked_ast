@@ -31,6 +31,15 @@ class DirAstCreateClass:
         tree = parser.parse(file_content)
         return tree
 
+    def get_node_label(node):
+        # ノードのタイプに基づいて適切なラベルを生成する
+        if node.type == 'identifier':
+            return f"Identifier:{node.text.decode()}"
+        elif node.type == 'literal':
+            return f"Literal:{node.text.decode()}"
+        else:
+            return node.type
+    
     def process_directory(self):
         for root, dirs, files in os.walk(self.dir_path):
             for file in files:
