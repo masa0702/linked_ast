@@ -1,5 +1,10 @@
 import os
+import yaml
+import subprocess
+import graphviz
 from tree_sitter import Language, Parser
+from graphviz import Digraph
+from IPython.display import Image, display
 
 # パーサーのセットアップ
 Language.build_library(
@@ -40,8 +45,35 @@ class DirAstCreateClass:
         else:
             return node.type
     
+    def generate_dot(self, node, dot):
+        # ラベルのエスケープと囲み
+        label = self.get_node_label(node).replace('"', r'\"')
+        dot.append(f'  {id(node)} [label="{label}"];')
+
+        for child in node.children:
+            # リンクのエスケープと囲み
+            dot.append(f'  {id(node)} -> {id(child)};')
+            self.generate_dot(child, dot)
+
+    def generate_ast_dot(self, node):
+        dot = []
+        dot.append('digraph AST {')
+        self.generate_dot(node, dot)
+        dot.append('}')
+        return '\n'.join(dot)
+    
+    def generate_ast_dict_with_terminal(self, node, source_code):
+        result = {'type': node.type}
+        if node.child_count > 0:
+            result['children'] = [self.generate_ast_dict_with_terminal(c, source_code) for c in node.children]
+        if node.is_named:
+            start_byte = node.start_byte
+            end_byte = node.end_byte
+            result['content'] = source_code[start_byte:end_byte].decode()
+        return result
+
     def process_directory(self):
-        for root, dirs, files in os.walk(self.dir_path):
+        for root, files in os.walk(self.dir_path):
             for file in files:
                 if file.endswith(".py"):
                     filepath = os.path.join(root, file)
@@ -53,10 +85,20 @@ class DirAstCreateClass:
                     ast = self.get_ast(file_content, PYTHON_LANGUAGE)
                     self.write_ast_to_yaml(ast, yaml_filepath, file_content)
 
-    def write_ast_to_yaml(self, ast, yaml_filepath, file_content):
-        # ASTをYAMLファイルに書き込む処理を追加する必要があります。
-        pass
+    def write_ast_to_yaml(self, ast, yaml_filepath, source_code):
+        ast_dict = self.generate_ast_dict_with_terminal(ast.root_node, source_code)
+        with open(yaml_filepath, 'w') as file:
+            yaml.dump(ast_dict, file)
 
+    def visualize_ast(self, ast, dot_filepath, png_filepath):
+        ast_dot = self.generate_ast_dot(ast.root_node)
+        with open(dot_filepath, 'w') as file:
+            file.write(ast_dot)
+
+        subprocess.run(['dot', '-Tpng', dot_filepath, '-o', png_filepath], check=True)
+        # Display the generated image
+        display(Image(png_filepath))
+        
 # 使用例
 target_dir_path = "/path/to/your/code/directory"
 output_yaml_dir = "/path/to/output/yaml/directory"
