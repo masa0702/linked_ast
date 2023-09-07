@@ -1,0 +1,9 @@
+tree-sitter
+pydot
+graphviz
+anytree
+os
+re
+json
+subprocess
+sqlite3
