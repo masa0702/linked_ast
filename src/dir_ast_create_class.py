@@ -18,3 +18,10 @@ class DirAstCreateClass:
                     
                     ast = get_ast(file_content)
                     write_ast_to_yaml(ast, yaml_filepath, file_content)
+
+    def get_file_content(self, filepath):
+        with open(filepath, "r") as f:
+            file_content = f.read()
+        return file_content
+    
+    
