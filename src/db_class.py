@@ -1,7 +1,9 @@
 import sqlite3
 import os
+import yaml
 
 class Db:
+    # --- 共通部分 ---
     def remove_duplicate_rows_keep_one(self, db_path):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -23,7 +25,25 @@ class Db:
         conn.commit()
         conn.close()
         
+    # --- import db ---
+    def insert_import_db(self, db_path, from_file, import_file, alias):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO my_tabble VAALUES(?, ?, ?)", (from_file, import_file, alias))
+        conn.commit()
+        conn.close()
+        
+    def import_db_main(self, directory, db_dir):
+        for filename in os.listdir(directory):
+            db_name = f"import_{os.path.splittext(filename)[0]}.db"
+            db_path = os.path.join(db_dir, db_name)
+            self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
+            with open(os.path.splitext(filename)[0]) as f:
+                data = yaml.safe_load(f)
+                .extract_imports_statements(data, db_path)
+                print(f"complete : {os.path.splitext(filename)[0]:}")
     
+    # 
     
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):
