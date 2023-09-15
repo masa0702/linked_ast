@@ -240,4 +240,23 @@ class Analyzer:
         with open(new_file_path, "w") as file:
             yaml.dump(yaml_ast)
     
-               
+    def convert_dict_to_yaml(self, data):
+        def remove_private_attributes(data):
+            if isinstance(data,dict):
+                return {
+                    key: remove_private_attributes(value)
+                    for key, value in data.items()
+                    if not key.startswith("_")
+                }
+            elif isinstance(data, list):
+                return {
+                    remove_private_attributes(value)
+                    for value in data
+                }
+            else:
+                return data
+        cleaned_data = remove_private_attributes(data)
+        yaml_data = yaml.dump(cleaned_data)
+        return yaml_data
+    
+    
