@@ -99,3 +99,16 @@ class Analyzer:
                     ast_node = self.build_ast_tree(ast_data)
                     return ast_node
         return None
+    
+    def find_function_ast(self, ast_node, func_name):
+        if isinstance(ast_node, Node):
+            if ast_node.name == "function_definition" and ast_node.children[1].content == func_name:
+                return ast_node
+            else:
+                for child in ast_node.children:
+                    result = self.find_function_ast(child, func_name)
+                    if result is not None:
+                        return result
+        return None
+    
+    
