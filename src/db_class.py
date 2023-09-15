@@ -18,10 +18,7 @@ class Db:
     def create_db_import_elements(self, db_path, table_elements):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-
-        # テーブル作成のSQL文を動的に生成
-        create_table_sql = f"CREATE TABLE IF NOT EXISTS my_table ({', '.join(table_elements)})"
-        
+        create_table_sql = f"CREATE TABLE IF NOT EXISTS my_table ({', '.join(table_elements)})"  
         cursor.execute(create_table_sql)
         conn.commit()
         conn.close()
@@ -130,6 +127,29 @@ class Db:
                     analyzer.extract_function_calls(data, filename, db_dir, def_db_path)
         self.remove_duplicate_rows_keep_one(db_dir)
 
+    # --- use main ---
+    def get_caller_functions(self, db_path, caller_file):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM my_table WHERE caller_file = ?", (caller_file,))
+        result = cursor.fetchall()
+        conn.close()
+        result = [item[0] for item in result]
+        return result
+    
+    def get_function_ast(self, ast_dir_path, db_path, function_id):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT def_file, func_name FROM my_table WHERE id = ?", (function_id,))
+        result = cursor.fetchone()
+        conn.close()
+        if result is not None:
+            def_file, func_name = result
+            ast_node = self.load_ast_from_file(ast_dir_path, def_file)
+            if ast_node is not None:
+                return self.find_function_node(ast_node, func_name)
+        return None
+    
     # --- show db contents ---        
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):

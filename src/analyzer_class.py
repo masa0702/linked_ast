@@ -87,3 +87,4 @@ class Analyzer:
                 class_name = child["content"]
                 break
         return class_name
+    
