@@ -1,1 +1,6 @@
+
+input/:
+    mkdir input/
 output/
+    mkdir output/
+```
