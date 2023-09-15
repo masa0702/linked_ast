@@ -218,4 +218,18 @@ class Analyzer:
                 call_nodes.extend(self.find_all_call_nodes(child_data))
         return call_nodes
     
+    def find_identifier_nodes(self, ast_node):
+        identifier_nodes = []
+        def traverse(node):
+            if isinstance(node, dict) and node.get("type") == "identifier":
+                identifier_nodes.append(node)
+            if isinstance(node, dict) and "children" in node:
+                for child in node["children"]:
+                    traverse(child)
+            if isinstance(node, list):
+                for child in node:
+                    traverse(child)
+        traverse(ast_node)
+        return identifier_nodes
+    
     
