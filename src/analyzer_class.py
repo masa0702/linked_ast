@@ -150,4 +150,23 @@ class Analyzer:
         else:
             return None
         
+    def format_yaml_ast(self, yaml_ast):
+        def remove_null_values(data):
+            if isinstance(data, dict):
+                return{
+                    key: remove_null_values(value)
+                    for key, value in data.items()
+                    if value is not None
+                }
+            elif isinstance(data, list):
+                return{
+                    remove_null_values(value)
+                    for value in data
+                    if value is not None
+                }
+            else:
+                return data
+        formatted_ast = remove_null_values(yaml_ast)
+        return yaml.dump(formatted_ast)
+    
     
