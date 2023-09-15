@@ -179,4 +179,24 @@ class Analyzer:
         else:
             return Node(ast_node)
         
+    def add_copied_subtree_to_ast(self, origin_ast_path, copied_subtree):
+        with open(origin_ast_path, "r") as file:
+            original_ast_data = yaml.safe_load(file)
+        call_nodes = self.find_all_call_nodes(original_ast_data)
+        function_name = self.get_functiton_name(copied_subtree)
+        for call_node in call_nodes:
+            attribute_node = self.find_attibute_node(call_node)
+            if attribute_node is not None:
+                identifiers = self.find_identifier_nodes(attribute_node)
+                if len(identifiers) > 0:
+                    right_identifier = identifiers[-1]
+                    if right_identifier.get("content") == function_name:
+                        parent_node = right_identifier.get("parent")
+                        if parent_node is not None:
+                            parent_node["children"].append(copied_subtree)
+                        else:
+                            attribute_node["children"].append(copied_subtree)
+                        break
+        return original_ast_data
+    
     
