@@ -44,7 +44,7 @@ class Analyzer:
             for item in data:
                 self.extract_import_statements(item, filename, db_path)
     
-    def extract_function_calls(self, node, filename):
+    def extract_function_calls(self, node, file_name, db_path, def_db_path):
         if node["type"] == "call":
             for child in node["children"]:
                 if child["type"] == "attribute":
@@ -56,8 +56,11 @@ class Analyzer:
                                 alias_name = grandchild["content"]
                             else:
                                 function_name = grandchild["content"]
+                    if function_name and alias_name:
+                        id = self.get_id_from_def_db(db_path, function_name, alias_name)
+                        db.insert_link_db(db_path, file_name, id)
         for child in node.get("children", []):
-            self.extract_function_calls(child, filename)
+            self.extract_function_calls(child, file_name, None)
     
     def extract_function_definitions(self, node, filename, class_name=None):
         definitions = []

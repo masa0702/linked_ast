@@ -91,21 +91,23 @@ class Db:
             return None
         
     # --- db main ---
-    def import_attribute_db_main(self, directory, db_dir, attribute_dir):
+    def import_attribute_db_main(self, directory, import_dir, attribute_dir):
         for filename in os.listdir(directory):
             if filename.endswith(".yaml"):
-                db_name = f"import_{os.path.splittext(filename)[0]}.db"
-                db_path = os.path.join(db_dir, db_name)
+                import_name = f"import_{os.path.splittext(filename)[0]}.db"
+                import_path = os.path.join(import_dir, import_name)
                 attribute_db_name = f"attribute_{os.path.splittext(filename)[0]}.db"
                 attribute_db_path = os.path.join(attribute_dir, attribute_db_name)
                 
-                self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
+                self.create_db_import_elements(import_path, ["from_file", "import_file", "alias"])
                 with open(os.path.splitext(filename)[0]) as f:
                     data = yaml.safe_load(f)
-                    analyzer.extract_import_statements(data, db_path)
-                    self.insert_call_attribute_db(db_path, attribute_db_path)
+                    analyzer.extract_import_statements(data, import_path)
+                    self.insert_call_attribute_db(import_path, attribute_db_path)
                     print(f"complete : {os.path.splitext(filename)[0]}")
-    
+        self.remove_duplicate_rows_keep_one(import_dir)
+        self.remove_duplicate_rows_keep_one(attribute_dir)
+        
     def definition_db_main(self, directory, db_dir):
         for filename in os.listdir(directory):
             if filename.endwith(".yaml"):
@@ -118,7 +120,16 @@ class Db:
                         func_name = definition["function_name"]
                         id = definition["id"]
                         self.insert_definition_db_values(db_dir, def_file, class_name, func_name, id)
+        self.remove_duplicate_rows_keep_one(db_dir)
     
+    def link_db_main(self, directory, db_dir, def_db_path):
+        for filename in os.listdir(directory):
+            if filename.endwith(".yaml"):
+                with open(os.path.join(directory, filename)) as f:
+                    data = yaml.safe_load(f)
+                    analyzer.extract_function_calls(data, filename, db_dir, def_db_path)
+        self.remove_duplicate_rows_keep_one(db_dir)
+
     # --- show db contents ---        
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):
