@@ -205,4 +205,17 @@ class Analyzer:
             return function_def_content[4:].split("(")[0]
         return None
     
+    def find_all_call_nodes(self, ast_data):
+        call_nodes = []
+        if isinstance(ast_data, dict):
+            if ast_data.get("type") == "call":
+                call_nodes.append(ast_data)
+            if "children" in ast_data:
+                for child_data in ast_data["children"]:
+                    call_nodes.extend(self.find_all_call_nodes(child_data))
+        elif isinstance(ast_data, list):
+            for child_data in ast_data:
+                call_nodes.extend(self.find_all_call_nodes(child_data))
+        return call_nodes
+    
     
