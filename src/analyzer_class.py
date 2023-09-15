@@ -111,4 +111,23 @@ class Analyzer:
                         return result
         return None
     
+    def build_ast_tree(self, ast_data):
+        if isinstance(ast_data, dict):
+            node_type = ast_data.get("type")
+            node_content = ast_data.get("content")
+            node = Node(node_type, content=node_content)
+            if "children" in ast_data:
+                for child_data in ast_data["children"]:
+                    child_node = self.build_ast_tree(child_data)
+                    child_node.parent = node
+            return node
+        elif isinstance(ast_data, list):
+            parent_node = Node("parent_node")
+            for child_data in ast_data:
+                child_node = self.build_ast_tree(child_data)
+                child_node.parent = parent_node
+            return parent_node
+        else:
+            return Node(ast_data)
+        
     
