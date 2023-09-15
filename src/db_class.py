@@ -54,6 +54,13 @@ class Db:
         conn_import.close()
         
     # --- definition db ---
+    def create_definition_db(self, db_path):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS my_table (def_file TEXT, class_name TEXT, func_name TEXT, id INTEGER)")
+        conn.commit()
+        conn.close()
+    
     def insert_definition_db(self, db_path, def_file, class_name, func_name):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -89,14 +96,16 @@ class Db:
         
     # --- db main ---
     def import_attribute_db_main(self, directory, import_dir, attribute_dir):
+        import_db_elements = ["from_file", "import_file", "alias"]
+        attribute_db_elements = ["caller_file", "from_file", "import_file", "func_name"]
+        self.create_db_import_elements(import_dir, import_db_elements)
+        self.create_db_import_elements(attribute_dir, attribute_db_elements)
         for filename in os.listdir(directory):
             if filename.endswith(".yaml"):
                 import_name = f"import_{os.path.splittext(filename)[0]}.db"
                 import_path = os.path.join(import_dir, import_name)
                 attribute_db_name = f"attribute_{os.path.splittext(filename)[0]}.db"
                 attribute_db_path = os.path.join(attribute_dir, attribute_db_name)
-                
-                self.create_db_import_elements(import_path, ["from_file", "import_file", "alias"])
                 with open(os.path.splitext(filename)[0]) as f:
                     data = yaml.safe_load(f)
                     analyzer.extract_import_statements(data, import_path)

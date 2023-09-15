@@ -274,3 +274,5 @@ class Analyzer:
                     return result
         return None
     
+    def find_attirbute_node(self, ast_data):
+        return self.find_node_by_type(ast_data, "attribute")
