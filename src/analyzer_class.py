@@ -169,4 +169,14 @@ class Analyzer:
         formatted_ast = remove_null_values(yaml_ast)
         return yaml.dump(formatted_ast)
     
+    def copy_ast_subtree(self, ast_node):
+        if isinstance(ast_node, Node):
+            new_node = Node(ast_node.name, content=ast_node.content)
+            for child in ast_node.children:
+                new_child = self.copy_ast_subtree(child)
+                new_child.parent = new_node
+            return new_node
+        else:
+            return Node(ast_node)
+        
     
