@@ -199,4 +199,10 @@ class Analyzer:
                         break
         return original_ast_data
     
+    def get_function_name(self, function_node):
+        function_def_content = function_node["content"]
+        if function_def_content.startswith("def "):
+            return function_def_content[4:].split("(")[0]
+        return None
+    
     
