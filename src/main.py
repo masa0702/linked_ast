@@ -4,9 +4,9 @@ import yaml
 from dir_ast_create_class import DirAstCreateClass
 
 target_dir_path = ""
-output_png_dir = ""
-output_dot_dir = ""
-output_yaml_dir = ""
+output_png_dir = "/Users/takelab/linked_ast/output/out_png"
+output_dot_dir = "/Users/takelab/linked_ast/output/out_dot"
+output_yaml_dir = "/Users/takelab/linked_ast/output/out_yaml"
 
 os.makedirs(output_png_dir, exist_ok=True)
 os.makedirs(output_dot_dir, exist_ok=True)
