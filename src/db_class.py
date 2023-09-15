@@ -65,7 +65,42 @@ class Db:
         conn_attribute.commit()
         conn_attribute.close()
         conn_import.close()
-            
+        
+    # --- definition db ---
+    def insert_definition_db(self, db_path, def_file, class_name, func_name):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO my_table (def_file, class_name, func_name) VALUES(?, ?, ?)", (def_file, class_name, func_name))
+        conn.commit()
+        conn.close()
+    
+    # --- link db ---
+    def create_link_db(self, db_path):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS my_table (caller_file TEXT, id INTEGER)")
+        conn.commit()
+        conn.close()
+    
+    def insert_link_db(self, db_path, caller_file, key_id):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO my_table (caller_file, key_id) VALUES(?, ?)", (caller_file, key_id))
+        conn.commit()
+        conn.close()
+    
+    def get_id_from_def_db(self, db_path, function_name, class_name):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM my_table WHERE func_name = ? AND class_name = ?", (class_name, function_name))
+        id = cursor.fetchone()
+        conn.close()
+        if id:
+            return id[0]
+        else:
+            return None
+        
+    # --- show db contents ---        
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):
             if filename.endwith(".db"):
