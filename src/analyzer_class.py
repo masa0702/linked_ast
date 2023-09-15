@@ -259,4 +259,18 @@ class Analyzer:
         yaml_data = yaml.dump(cleaned_data)
         return yaml_data
     
+    def find_node_by_type(self, ast_data, node_type):
+        if isinstance(ast_data, dict) and ast_data.get("type") == node_type:
+            return ast_data
+        if isinstance(ast_data, dict) and "children" in ast_data:
+            for child in ast_data["children"]:
+                result = self.find_node_by_type(child, node_type)
+                if result is not None:
+                    return result
+        if isinstance(ast_data, list):
+            for item in ast_data:
+                result = self.find_node_by_type(item, node_type)
+                if result is not None:
+                    return result
+        return None
     
