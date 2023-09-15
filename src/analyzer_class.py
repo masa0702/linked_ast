@@ -130,4 +130,9 @@ class Analyzer:
         else:
             return Node(ast_data)
         
+    def convert_ast_to_yaml(self, ast_node):
+        json_data = json.loads(ast_node)
+        yaml_data = yaml.dump(json_data)
+        return yaml_data
+    
     
