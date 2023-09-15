@@ -1,9 +1,14 @@
 import sqlite3
 import os
 import yaml
-from analyzer_class import Analyzer as analyzer
+from analyzer_class import Analyzer 
+
+analyzer = Analyzer()
 
 class Db:
+    def __init__(self):
+        pass
+        
     # --- 共通部分 ---
     def remove_duplicate_rows_keep_one(self, db_path):
         conn = sqlite3.connect(db_path)
@@ -93,7 +98,63 @@ class Db:
             return id[0]
         else:
             return None
-        
+    
+    def extract_import_statements(self, data, filename, db_path):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == 'type' and value in ['import_statement', 'import_from_statement']:
+                    if value == 'import_from_statement':
+                        dotted_names = [child['content'] for child in data['children'] if child['type'] == 'dotted_name']
+                        aliased_import = [child for child in data['children'] if child['type'] == 'aliased_import']
+                        alias = None
+                        if aliased_import:
+                            alias_list = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'identifier']
+                            if alias_list:
+                                alias = alias_list[0]
+                        if aliased_import:
+                            imported = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'dotted_name'][0]
+                            self.insert_import_db_values(db_path, filename, dotted_names[0], imported, alias)
+                        elif len(dotted_names) > 1:
+                            self.insert_import_db_values(db_path, filename, dotted_names[0], dotted_names[1], None)
+                    elif value == 'import_statement':
+                        if 'aliased_import' in [child['type'] for child in data['children']]:
+                            aliased_import = [child for child in data['children'] if child['type'] == 'aliased_import']
+                            alias = None
+                            if aliased_import:
+                                alias_list = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'identifier']
+                                if alias_list:
+                                    alias = alias_list[0]
+                            imported = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'dotted_name']
+                            if imported:
+                                self.insert_import_db_values(db_path, filename, None, imported[0], alias)
+                        else:
+                            imported = [child['content'] for child in data['children'] if child['type'] == 'dotted_name']
+                            if imported:
+                                self.insert_import_db_values(db_path, filename, None, imported[0], None)
+                else:
+                    self.extract_import_statements(value, filename, db_path)
+        elif isinstance(data, list):
+            for item in data:
+                self.extract_import_statements(item, filename, db_path)
+    
+    def extract_function_calls(self, node, file_name, db_path, def_db_path):
+        if node["type"] == "call":
+            for child in node["children"]:
+                if child["type"] == "attribute":
+                    function_name = None
+                    alias_name = None
+                    for grandchild in child["children"]:
+                        if grandchild["type"] == "identifier":
+                            if alias_name is None:
+                                alias_name = grandchild["content"]
+                            else:
+                                function_name = grandchild["content"]
+                    if function_name and alias_name:
+                        id = self.get_id_from_def_db(db_path, function_name, alias_name)
+                        self.insert_link_db(db_path, file_name, id)
+        for child in node.get("children", []):
+            self.extract_function_calls(child, file_name, None)
+    
     # --- db main ---
     def import_attribute_db_main(self, directory, import_dir, attribute_dir):
         import_db_elements = ["from_file", "import_file", "alias"]

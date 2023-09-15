@@ -13,7 +13,6 @@ WORKDIR /app
 # 必要なPythonパッケージのインストール
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
 # ソースコードのコピー
 COPY . .
 

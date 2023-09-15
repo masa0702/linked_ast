@@ -18,20 +18,22 @@ Language.build_library(
 GO_LANGUAGE = Language("build/my-languages.so", "go")
 JS_LANGUAGE = Language("build/my-languages.so", "javascript")
 PYTHON_LANGUAGE = Language("build/my-languages.so", "python")
+parser = Parser()
 
 class DirAstCreateClass:
+    def __init__(self, language):
+        parser.set_language(language)
+        
     def get_file_content(self, filepath):
-        with open(filepath, "r") as f:
+        with open(filepath, "rb") as f:
             file_content = f.read()
         return file_content
 
-    def get_ast(self, file_content, language):
-        parser = Parser()
-        parser.set_language(language)
+    def get_ast(self, file_content):
         tree = parser.parse(file_content)
         return tree
 
-    def get_node_label(node):
+    def get_node_label(self,node):
         # ノードのタイプに基づいて適切なラベルを生成する
         if node.type == 'identifier':
             return f"Identifier:{node.text.decode()}"
@@ -89,9 +91,7 @@ class DirAstCreateClass:
         ast_dot = self.generate_ast_dot(ast.root_node)
         with open(dot_filepath, 'w') as file:
             file.write(ast_dot)
-
         subprocess.run(['dot', '-Tpng', dot_filepath, '-o', png_filepath], check=True)
-        # Display the generated image
         display(Image(png_filepath))
         
 # 使用例

@@ -3,66 +3,10 @@ import os
 import json
 import yaml
 from tree_sitter import Language, Parser
+from graphviz import Digraph
 from anytree import Node, RenderTree
-from db_class import Db as db
 
 class Analyzer:
-    def extract_import_statements(self, data, filename, db_path):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if key == 'type' and value in ['import_statement', 'import_from_statement']:
-                    if value == 'import_from_statement':
-                        dotted_names = [child['content'] for child in data['children'] if child['type'] == 'dotted_name']
-                        aliased_import = [child for child in data['children'] if child['type'] == 'aliased_import']
-                        alias = None
-                        if aliased_import:
-                            alias_list = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'identifier']
-                            if alias_list:
-                                alias = alias_list[0]
-                        if aliased_import:
-                            imported = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'dotted_name'][0]
-                            db.insert_import_db_values(db_path, filename, dotted_names[0], imported, alias)
-                        elif len(dotted_names) > 1:
-                            db.insert_import_db_values(db_path, filename, dotted_names[0], dotted_names[1], None)
-                    elif value == 'import_statement':
-                        if 'aliased_import' in [child['type'] for child in data['children']]:
-                            aliased_import = [child for child in data['children'] if child['type'] == 'aliased_import']
-                            alias = None
-                            if aliased_import:
-                                alias_list = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'identifier']
-                                if alias_list:
-                                    alias = alias_list[0]
-                            imported = [child['content'] for child in aliased_import[0]['children'] if child['type'] == 'dotted_name']
-                            if imported:
-                                db.insert_import_db_values(db_path, filename, None, imported[0], alias)
-                        else:
-                            imported = [child['content'] for child in data['children'] if child['type'] == 'dotted_name']
-                            if imported:
-                                db.insert_import_db_values(db_path, filename, None, imported[0], None)
-                else:
-                    self.extract_import_statements(value, filename, db_path)
-        elif isinstance(data, list):
-            for item in data:
-                self.extract_import_statements(item, filename, db_path)
-    
-    def extract_function_calls(self, node, file_name, db_path, def_db_path):
-        if node["type"] == "call":
-            for child in node["children"]:
-                if child["type"] == "attribute":
-                    function_name = None
-                    alias_name = None
-                    for grandchild in child["children"]:
-                        if grandchild["type"] == "identifier":
-                            if alias_name is None:
-                                alias_name = grandchild["content"]
-                            else:
-                                function_name = grandchild["content"]
-                    if function_name and alias_name:
-                        id = self.get_id_from_def_db(db_path, function_name, alias_name)
-                        db.insert_link_db(db_path, file_name, id)
-        for child in node.get("children", []):
-            self.extract_function_calls(child, file_name, None)
-    
     def extract_function_definitions(self, node, filename, class_name=None):
         definitions = []
         if node["type"] == "function_definition":
@@ -276,3 +220,26 @@ class Analyzer:
     
     def find_attirbute_node(self, ast_data):
         return self.find_node_by_type(ast_data, "attribute")
+    
+    def convert_yaml_to_dot(self, yaml_file, dotfile):
+        with open(yaml_file, "r") as file:
+            yaml_data = yaml.safe_load(file)
+        dot = graphviz.Digraph()
+        def traverse(node, parent_id=None):
+            node_id = str(id(node))
+            if isinstance(node, dict):
+                if node.get("type") == "identifier" and node.get("content") is not None:
+                    label = f"identifier: {node['content']}"
+                else:
+                    label = node.get("type", " ")
+                dot.node(node_id, label=label)
+                if parent_id is not None:
+                    dot.edge(parent_id, node_id)
+                for key, value in node.items():
+                    if isinstance(value, (dict, list)):
+                        traverse(value, parent_id=node_id)
+            elif isinstance(node, list):
+                for item in node:
+                    traverse(item, parent_id=node_id)
+        traverse(yaml_data)
+        dot.render(dotfile, format="png")
