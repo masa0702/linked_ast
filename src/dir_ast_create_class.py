@@ -20,11 +20,6 @@ JS_LANGUAGE = Language("build/my-languages.so", "javascript")
 PYTHON_LANGUAGE = Language("build/my-languages.so", "python")
 
 class DirAstCreateClass:
-    def __init__(self, target_dir_path, output_yaml_dir):
-        self.dir_path = target_dir_path
-        self.output_yaml_dir = output_yaml_dir
-        os.makedirs(self.output_yaml_dir, exist_ok=True)
-
     def get_file_content(self, filepath):
         with open(filepath, "r") as f:
             file_content = f.read()
@@ -100,7 +95,7 @@ class DirAstCreateClass:
         display(Image(png_filepath))
         
 # 使用例
-target_dir_path = "/path/to/your/code/directory"
-output_yaml_dir = "/path/to/output/yaml/directory"
-ast_creator = DirAstCreateClass(target_dir_path, output_yaml_dir)
-ast_creator.process_directory()
+# target_dir_path = "/path/to/your/code/directory"
+# output_yaml_dir = "/path/to/output/yaml/directory"
+# ast_creator = DirAstCreateClass()
+# ast_creator.process_directory()
