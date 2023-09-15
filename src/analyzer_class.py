@@ -58,7 +58,25 @@ class Analyzer:
                                 function_name = grandchild["content"]
         for child in node.get("children", []):
             self.extract_function_calls(child, filename)
-            
+    
+    def extract_function_definitions(self, node, filename, class_name=None):
+        definitions = []
+        if node["type"] == "function_definition":
+            for child in node["children"]:
+                if child["type"] == "identifier":
+                    function_name = child["content"]
+                    definition = {
+                        "class_name": class_name,
+                        "function_name": function_name,
+                        "id": None
+                    }
+                    definitions.append(definition)
+        for child in node.get("children", []):
+            if child["type"] == "class_definition":
+                class_name = self.get_class_name(child)
+            definitions.extend(self.extract_function_definitions(child, filename, class_name))
+        return definitions
+    
     def get_class_name(self, node):
         class_name = None
         for child in node["children"]:
