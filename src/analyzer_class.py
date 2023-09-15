@@ -232,4 +232,12 @@ class Analyzer:
         traverse(ast_node)
         return identifier_nodes
     
+    def save_ast_to_yaml(self, ast, original_file_path, save_dir):
+        original_file_name = os.path.basename(original_file_path)
+        new_file_name = f"linked_{original_file_name}"
+        new_file_path = os.path.join(save_dir, new_file_name)
+        yaml_ast = self.convert_node_to_yaml(ast)
+        with open(new_file_path, "w") as file:
+            yaml.dump(yaml_ast)
     
+               
