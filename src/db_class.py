@@ -33,16 +33,6 @@ class Db:
         cursor.execute("INSERT OR IGNORE INTO my_table VALUES(?, ?, ?)", (from_file, import_file, alias))
         conn.commit()
         conn.close()
-        
-    def import_outer_db_main(self, directory, db_dir):
-        for filename in os.listdir(directory):
-            db_name = f"import_{os.path.splittext(filename)[0]}.db"
-            db_path = os.path.join(db_dir, db_name)
-            self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
-            with open(os.path.splitext(filename)[0]) as f:
-                data = yaml.safe_load(f)
-                analyzer.extract_imports_statements(data, db_path)
-                print(f"complete : {os.path.splitext(filename)[0]:}")
     
     # --- call attribute db ---
     def insert_call_attribute_db(self, import_db, attribute_db):
@@ -100,6 +90,22 @@ class Db:
         else:
             return None
         
+    # --- db main ---
+    def import_outer_db_main(self, directory, db_dir, attribute_dir):
+        for filename in os.listdir(directory):
+            if filename.endswith(".yaml"):
+                db_name = f"import_{os.path.splittext(filename)[0]}.db"
+                db_path = os.path.join(db_dir, db_name)
+                attribute_db_name = f"attribute_{os.path.splittext(filename)[0]}.db"
+                attribute_db_path = os.path.join(attribute_dir, attribute_db_name)
+                
+                self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
+                with open(os.path.splitext(filename)[0]) as f:
+                    data = yaml.safe_load(f)
+                    analyzer.extract_imports_statements(data, db_path)
+                    self.insert_call_attribute_db(db_path, attribute_db_path)
+                    print(f"complete : {os.path.splitext(filename)[0]}")
+    
     # --- show db contents ---        
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):
