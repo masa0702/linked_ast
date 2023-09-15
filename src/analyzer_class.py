@@ -135,4 +135,19 @@ class Analyzer:
         yaml_data = yaml.dump(json_data)
         return yaml_data
     
+    def convert_node_to_yaml(self, node):
+        if isinstance(node, Node):
+            data = {
+                "type": node.name,
+                "content": node.content,
+                "children": []
+            }
+            for child in node.children:
+                child_data = self.convert_node_to_yaml(child)
+                if child_data is not None:
+                    data["children"].append(child_data)
+            return data
+        else:
+            return None
+        
     
