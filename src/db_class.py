@@ -91,7 +91,7 @@ class Db:
             return None
         
     # --- db main ---
-    def import_outer_db_main(self, directory, db_dir, attribute_dir):
+    def import_attribute_db_main(self, directory, db_dir, attribute_dir):
         for filename in os.listdir(directory):
             if filename.endswith(".yaml"):
                 db_name = f"import_{os.path.splittext(filename)[0]}.db"
@@ -102,9 +102,22 @@ class Db:
                 self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
                 with open(os.path.splitext(filename)[0]) as f:
                     data = yaml.safe_load(f)
-                    analyzer.extract_imports_statements(data, db_path)
+                    analyzer.extract_import_statements(data, db_path)
                     self.insert_call_attribute_db(db_path, attribute_db_path)
                     print(f"complete : {os.path.splitext(filename)[0]}")
+    
+    def definition_db_main(self, directory, db_dir):
+        for filename in os.listdir(directory):
+            if filename.endwith(".yaml"):
+                with open(os.path.join(directory, filename)) as f:
+                    data = yaml.safe_load(f)
+                    definitions = analyzer.extract_function_definitions(data, filename)
+                    for definition in definitions:
+                        def_file = filename
+                        class_name = definition["class_name"]
+                        func_name = definition["function_name"]
+                        id = definition["id"]
+                        self.insert_definition_db_values(db_dir, def_file, class_name, func_name, id)
     
     # --- show db contents ---        
     def show_all_dbs_contents(self, db_dir):
