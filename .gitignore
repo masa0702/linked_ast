@@ -1,6 +1,3 @@
 
-input/:
-    mkdir input/
+input/
 output/
-    mkdir output/
-```
