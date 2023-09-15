@@ -1,6 +1,7 @@
 import pydot
 import os
 import json
+import yaml
 from tree_sitter import Language, Parser
 from anytree import Node, RenderTree
 from db_class import Db as db
@@ -88,3 +89,13 @@ class Analyzer:
                 break
         return class_name
     
+    # --- use main ---
+    def load_ast_from_file(self, directory, def_file):
+        for filename in os.listdir(directory):
+            if filename.endwith(".yaml") and filename == def_file:
+                file_path = os.path.join(directory, filename)
+                with open(file_path)as f:
+                    ast_data = yaml.safe_load(f)
+                    ast_node = self.build_ast_tree(ast_data)
+                    return ast_node
+        return None
