@@ -163,9 +163,9 @@ class Db:
         self.create_db_import_elements(attribute_dir, attribute_db_elements)
         for filename in os.listdir(directory):
             if filename.endswith(".yaml"):
-                import_name = f"import_{os.path.splittext(filename)[0]}.db"
+                import_name = f"import_{os.path.splitext(filename)[0]}.db"
                 import_path = os.path.join(import_dir, import_name)
-                attribute_db_name = f"attribute_{os.path.splittext(filename)[0]}.db"
+                attribute_db_name = f"attribute_{os.path.splitext(filename)[0]}.db"
                 attribute_db_path = os.path.join(attribute_dir, attribute_db_name)
                 with open(os.path.splitext(filename)[0]) as f:
                     data = yaml.safe_load(f)
