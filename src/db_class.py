@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import yaml
+from analyzer_class import Analyzer as analyzer
 
 class Db:
     # --- 共通部分 ---
@@ -29,22 +30,42 @@ class Db:
     def insert_import_db(self, db_path, from_file, import_file, alias):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        cursor.execute("INSERT OR IGNORE INTO my_tabble VAALUES(?, ?, ?)", (from_file, import_file, alias))
+        cursor.execute("INSERT OR IGNORE INTO my_table VALUES(?, ?, ?)", (from_file, import_file, alias))
         conn.commit()
         conn.close()
         
-    def import_db_main(self, directory, db_dir):
+    def import_outer_db_main(self, directory, db_dir):
         for filename in os.listdir(directory):
             db_name = f"import_{os.path.splittext(filename)[0]}.db"
             db_path = os.path.join(db_dir, db_name)
             self.create_db_import_elements(db_path, ["from_file", "import_file", "alias"])
             with open(os.path.splitext(filename)[0]) as f:
                 data = yaml.safe_load(f)
-                .extract_imports_statements(data, db_path)
+                analyzer.extract_imports_statements(data, db_path)
                 print(f"complete : {os.path.splitext(filename)[0]:}")
     
-    # 
-    
+    # --- call attribute db ---
+    def insert_call_attribute_db(self, import_db, attribute_db):
+        conn_import = sqlite3.connect(import_db)
+        conn_attribute = sqlite3.connect(attribute_db)
+        cursor_import = conn_import.cursor()
+        cursor_attribute = conn_attribute.cursor()
+        cursor_import.execute("SELECT from_file, import_file, alias FROM my_table")
+        import_values = cursor_import.fetchall()
+        for value in import_values:
+            caller_file = os.path.splitext(os.path.basename(import_db))[0]
+            from_file = value[0]
+            import_file = value[1]
+            if len(value) > 2:
+                alias = value[2]
+            else:
+                alias = None
+            func_name = None
+            cursor_attribute.execute("INSERT INTO my_table VALUES(?, ?, ?, ?, ?)", (caller_file, from_file, import_file, alias, func_name))
+        conn_attribute.commit()
+        conn_attribute.close()
+        conn_import.close()
+            
     def show_all_dbs_contents(self, db_dir):
         for filename in os.listdir(db_dir):
             if filename.endwith(".db"):
@@ -52,7 +73,7 @@ class Db:
                 print(f"---{filename}---")
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
-                cursor.execute("PEAFMA table_info(my_table)")
+                cursor.execute("PRAGMA table_info(my_table)")
                 columns = [column[1] for column in cursor.fetchall()]
                 print(columns)
                 cursor.execute("SELECT * FROM my_table")
