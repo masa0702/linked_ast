@@ -2,11 +2,15 @@ import pydot
 import os
 import json
 import yaml
+import graphviz
 from tree_sitter import Language, Parser
 from graphviz import Digraph
 from anytree import Node, RenderTree
 
 class Analyzer:
+    def __init__(self):
+        self.new_file_path = None
+        
     def extract_function_definitions(self, node, filename, class_name=None):
         definitions = []
         if node["type"] == "function_definition":
@@ -36,7 +40,7 @@ class Analyzer:
     # --- use main ---
     def load_ast_from_file(self, directory, def_file):
         for filename in os.listdir(directory):
-            if filename.endwith(".yaml") and filename == def_file:
+            if filename.endswith(".yaml") and filename == def_file:
                 file_path = os.path.join(directory, filename)
                 with open(file_path)as f:
                     ast_data = yaml.safe_load(f)
@@ -127,9 +131,9 @@ class Analyzer:
         with open(origin_ast_path, "r") as file:
             original_ast_data = yaml.safe_load(file)
         call_nodes = self.find_all_call_nodes(original_ast_data)
-        function_name = self.get_functiton_name(copied_subtree)
+        function_name = self.get_function_name(copied_subtree)
         for call_node in call_nodes:
-            attribute_node = self.find_attibute_node(call_node)
+            attribute_node = self.find_attirbute_node(call_node)
             if attribute_node is not None:
                 identifiers = self.find_identifier_nodes(attribute_node)
                 if len(identifiers) > 0:
@@ -179,26 +183,28 @@ class Analyzer:
     def save_ast_to_yaml(self, ast, original_file_path, save_dir):
         original_file_name = os.path.basename(original_file_path)
         new_file_name = f"linked_{original_file_name}"
-        new_file_path = os.path.join(save_dir, new_file_name)
-        yaml_ast = self.convert_node_to_yaml(ast)
-        with open(new_file_path, "w") as file:
-            yaml.dump(yaml_ast)
+        self.new_file_path = os.path.join(save_dir, new_file_name)
+        yaml_ast = self.convert_dict_to_yaml(ast)
+        print(yaml_ast)
+        with open(self.new_file_path, "w") as file:
+            file.write(yaml_ast)
     
     def convert_dict_to_yaml(self, data):
         def remove_private_attributes(data):
-            if isinstance(data,dict):
+            if isinstance(data, dict):
                 return {
                     key: remove_private_attributes(value)
                     for key, value in data.items()
-                    if not key.startswith("_")
+                    if not key.startswith('_')
                 }
             elif isinstance(data, list):
-                return {
-                    remove_private_attributes(value)
-                    for value in data
-                }
+                return [
+                    remove_private_attributes(item)
+                    for item in data
+                ]
             else:
                 return data
+
         cleaned_data = remove_private_attributes(data)
         yaml_data = yaml.dump(cleaned_data)
         return yaml_data
@@ -221,17 +227,17 @@ class Analyzer:
     def find_attirbute_node(self, ast_data):
         return self.find_node_by_type(ast_data, "attribute")
     
-    def convert_yaml_to_dot(self, yaml_file, dotfile):
-        with open(yaml_file, "r") as file:
-            yaml_data = yaml.safe_load(file)
+    def convert_yaml_to_dot(self, dot_file):
+        with open(self.new_file_path, 'r') as f:
+            data = yaml.safe_load(f)
         dot = graphviz.Digraph()
         def traverse(node, parent_id=None):
-            node_id = str(id(node))
+            node_id = str(id(node))  # ノードオブジェクトのIDを使用
             if isinstance(node, dict):
                 if node.get("type") == "identifier" and node.get("content") is not None:
                     label = f"identifier: {node['content']}"
                 else:
-                    label = node.get("type", " ")
+                    label = node.get("type", "")
                 dot.node(node_id, label=label)
                 if parent_id is not None:
                     dot.edge(parent_id, node_id)
@@ -240,6 +246,6 @@ class Analyzer:
                         traverse(value, parent_id=node_id)
             elif isinstance(node, list):
                 for item in node:
-                    traverse(item, parent_id=node_id)
-        traverse(yaml_data)
-        dot.render(dotfile, format="png")
+                    traverse(item, parent_id=parent_id)
+        traverse(data)
+        dot.render(dot_file, format='png')

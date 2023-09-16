@@ -24,6 +24,13 @@ output_png_dir = "output/out_png"
 output_dot_dir = "output/out_dot"
 output_yaml_dir = "output/out_yaml"
 linked_yaml_dir = "output/linked_yaml"
+import_db_path = "save_db/import_db"
+attribute_db_path = "save_db/attribute_db"
+definition_db_path = "save_db/definition.db"
+link_db_path = "save_db/link.db"
+link_file_path = "output/linked_file"
+link_dot_path = "output/linked_file/link.dot"
+caller_file = "forast.yaml"
 
 os.makedirs(output_png_dir, exist_ok=True)
 os.makedirs(output_dot_dir, exist_ok=True)
@@ -45,26 +52,17 @@ for root, dirs, files in os.walk(target_dir_path):
             ast = dirast.get_ast(file_content)
             dirast.write_ast_to_yaml(ast, yaml_filepath, file_content)
             dirast.visualize_ast(ast, dot_filepath, png_filepath)
-            
-import_db_path = "/Users/takelab/linked_ast/save_db/import_db"
-attribute_db_path = "/Users/takelab/linked_ast/save_db/attribute_db"
-definition_db_path = "/Users/takelab/linked_ast/save_db/definition.db"
-link_db_path = "/Users/takelab/linked_ast/save_db/link.db"
-link_dot_path = "/Users/takelab/linked_ast/output/link.dot"
 
 db.import_attribute_db_main(output_yaml_dir, import_db_path, attribute_db_path)
 db.definition_db_main(output_yaml_dir, definition_db_path)
 db.link_db_main(output_yaml_dir, link_db_path, definition_db_path)
-
-for file in os.listdir(output_yaml_dir):
-    caller_file = os.path.join(output_yaml_dir, file)
-    print(caller_file)
-    get_id = db.get_caller_functions(link_db_path, caller_file)
-    function_id = get_id[1]
-    get_ast = db.get_function_ast(output_yaml_dir, definition_db_path, function_id)
-    copyed_ast_subtree = analyzer.copy_ast_subtree(get_ast)
-    convert_copied_ast_subtree = analyzer.convert_node_to_yaml(copyed_ast_subtree)
-    subtree = analyzer.add_copied_subtree_to_ast(file, convert_copied_ast_subtree)
-    linked_ast = analyzer.save_ast_to_yaml(subtree, file, linked_yaml_dir)
-    analyzer.convert_yaml_to_dot(linked_ast, link_dot_path)
+caller_file_path = os.path.join(output_yaml_dir, caller_file)
+get_id = db.get_caller_functions(link_db_path, caller_file)
+function_id = get_id[0]
+get_ast = db.get_function_ast(output_yaml_dir, definition_db_path, function_id)
+copyed_ast_subtree = analyzer.copy_ast_subtree(get_ast)
+convert_copied_ast_subtree = analyzer.convert_node_to_yaml(copyed_ast_subtree)
+subtree = analyzer.add_copied_subtree_to_ast(caller_file_path, convert_copied_ast_subtree)
+linked_ast = analyzer.save_ast_to_yaml(subtree, caller_file_path, link_file_path)
+analyzer.convert_yaml_to_dot(link_dot_path)
     
